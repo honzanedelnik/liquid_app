@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recepty a Sestavy</title>
+  <style>
+    :root {
+      --primary: #007bff;
+      --success: #28a745;
+      --danger: #dc3545;
+      --bg: #f8f9fa;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      padding: 15px;
+      box-sizing: border-box;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      flex-shrink: 0;
+    }
+
+    .nav-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      margin-bottom: 15px;
+      flex-shrink: 0;
+    }
+
+    .form-group { margin-bottom: 10px; }
+    label { display: block; font-weight: bold; margin-bottom: 4px; font-size: 0.9em; }
+    
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+
+    .row-builder {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .row-builder select { flex: 2; }
+    .row-builder input { flex: 1; }
+
+    .btn {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-primary { background: var(--primary); color: white; width: 100%; }
+    .btn-add { background: #6c757d; color: white; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-danger { background: var(--danger); color: white; padding: 5px 8px; font-size: 0.8em; }
+
+    /* Seznam přidaných položek do receptu */
+    .ingredient-list {
+      background: #f1f3f5;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .ingredient-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      border-bottom: 1px solid #ddd;
+    }
+
+    /* Karta uloženého receptu */
+    .recipes-container {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .recipe-card {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .recipe-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+    }
+
+    .recipe-title { font-weight: bold; font-size: 1.1em; }
+    
+    .recipe-ingredients {
+      font-size: 0.9em;
+      color: #495057;
+      margin-bottom: 12px;
+    }
+
+    .recipe-actions {
+      display: flex;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="nav-bar">
+  <h2>Tvorba receptů</h2>
+  <div>
+    <a href="index.html" class="nav-link" style="margin-right: 10px;">🏠 Domů</a>
+    <a href="sklad.html" class="nav-link">📦 Sklad</a>
+  </div>
+</div>
+
+  <!-- Formulář pro vytvoření receptu -->
+  <div class="card">
+    <div class="form-group">
+      <label for="recipeName">Název receptu / sestavy:</label>
+      <input type="text" id="recipeName" placeholder="např. Barva Odstín 402">
+    </div>
+
+    <label>Složení receptu:</label>
+    <div class="row-builder">
+      <select id="itemSelect">
+        <option value="">-- Vyberte položku --</option>
+      </select>
+      <input type="number" id="itemQty" placeholder="Kusů" min="1" step="1">
+      <button class="btn btn-add" onclick="addIngredient()">+ Přidat</button>
+    </div>
+
+    <!-- Dočasný seznam složek -->
+    <div class="ingredient-list" id="tempIngredients">
+      <small style="color:#6c757d">Zatím nebyly přidány žádné položky.</small>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveRecipe()">Uložit nový recept</button>
+  </div>
+
+  <!-- Uložené recepty -->
+  <h3>Uložené recepty</h3>
+  <div class="recipes-container" id="recipesList">
+    <!-- Sem JS vykreslí karty receptů -->
+  </div>
+
+  <script>
+    let db;
+    let skladItems = []; // Pro rychlý přístup k položkám skladu
+    let currentIngredients = []; // Složky v rozpracovaném receptu
+
+    const request = indexedDB.open('SkladDB', 3);
+
+    request.onupgradeneeded = (e) => {
+      db = e.target.result;
+      if (!db.objectStoreNames.contains('sklad')) {
+        db.createObjectStore('sklad', { keyPath: 'id', autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains('recepty')) {
+        db.createObjectStore('recepty', { keyPath: 'id', autoIncrement: true });
+      }
+    };
+
+    request.onsuccess = (e) => {
+      db = e.target.result;
+      loadSkladItems();
+      renderRecipes();
+    };
+
+    // Načte položky ze skladu pro výber v rozevíracím seznamu (Select)
+    function loadSkladItems() {
+      const tx = db.transaction('sklad', 'readonly');
+      const store = tx.objectStore('sklad');
+      const req = store.getAll();
+
+      req.onsuccess = () => {
+        skladItems = req.result;
+        const select = document.getElementById('itemSelect');
+        select.innerHTML = '<option value="">-- Vyberte položku --</option>';
+        
+        skladItems.forEach(item => {
+          const icon = item.jeBarvivo ? '🎨' : '📦';
+          select.innerHTML += `<option value="${item.id}">${icon} ${item.nazev} (Skladem: ${item.zasoba}ks)</option>`;
+        });
+      };
+    }
+
+    // Přidá složku do dočasného seznamu v rozpracovaném receptu
+    function addIngredient() {
+      const select = document.getElementById('itemSelect');
+      const qtyInput = document.getElementById('itemQty');
+      
+      const itemId = Number(select.value);
+      const qty = parseInt(qtyInput.value, 10);
+
+      if (!itemId || isNaN(qty) || qty <= 0) {
+        alert('Vyberte položku a zadejte platný počet kusů.');
+        return;
+      }
+
+      const itemData = skladItems.find(i => i.id === itemId);
+      
+      // Kontrola, zda už položka v receptu není
+      const existing = currentIngredients.find(i => i.itemId === itemId);
+      if (existing) {
+        existing.qty += qty;
+      } else {
+        currentIngredients.push({
+          itemId: itemId,
+          nazev: itemData.nazev,
+          qty: qty
+        });
+      }
+
+      select.value = '';
+      qtyInput.value = '';
+      renderTempIngredients();
+    }
+
+    function removeIngredient(index) {
+      currentIngredients.splice(index, 1);
+      renderTempIngredients();
+    }
+
+    function renderTempIngredients() {
+      const container = document.getElementById('tempIngredients');
+      if (currentIngredients.length === 0) {
+        container.innerHTML = '<small style="color:#6c757d">Zatím nebyly přidány žádné položky.</small>';
+        return;
+      }
+
+      container.innerHTML = currentIngredients.map((ing, idx) => `
+        <div class="ingredient-item">
+          <span><strong>${ing.nazev}</strong>: ${ing.qty} ks</span>
+          <button class="btn btn-danger" onclick="removeIngredient(${idx})">✕</button>
+        </div>
+      `).join('');
+    }
+
+    // Uloží recept do DB
+    function saveRecipe() {
+      const name = document.getElementById('recipeName').value.trim();
+
+      if (!name) {
+        alert('Zadejte název receptu.');
+        return;
+      }
+      if (currentIngredients.length === 0) {
+        alert('Recept musí obsahovat alespoň jednu položku.');
+        return;
+      }
+
+      const tx = db.transaction('recepty', 'readwrite');
+      const store = tx.objectStore('recepty');
+
+      store.add({
+        nazev: name,
+        slozeni: currentIngredients
+      });
+
+      tx.oncomplete = () => {
+        document.getElementById('recipeName').value = '';
+        currentIngredients = [];
+        renderTempIngredients();
+        renderRecipes();
+      };
+    }
+
+    // Vykreslí uložené recepty
+    function renderRecipes() {
+      const container = document.getElementById('recipesList');
+      container.innerHTML = '';
+
+      const tx = db.transaction('recepty', 'readonly');
+      const store = tx.objectStore('recepty');
+      const req = store.getAll();
+
+      req.onsuccess = () => {
+        const recipes = req.result;
+        recipes.forEach(recipe => {
+          const ingredientsHtml = recipe.slozeni.map(i => `• ${i.nazev}: <strong>${i.qty} ks</strong>`).join('<br>');
+
+          container.innerHTML += `
+            <div class="recipe-card">
+              <div class="recipe-header">
+                <span class="recipe-title">${recipe.nazev}</span>
+                <button class="btn btn-danger" onclick="deleteRecipe(${recipe.id})">Smazat</button>
+              </div>
+              <div class="recipe-ingredients">
+                ${ingredientsHtml}
+              </div>
+              <div class="recipe-actions">
+                <button class="btn btn-success" style="width:100%" onclick="applyRecipe(${recipe.id})">⚡ Odečíst dávku ze skladu</button>
+              </div>
+            </div>
+          `;
+        });
+      };
+    }
+
+    // Hlavní akce: Odečte z hlavního skladu položky daného receptu
+    function applyRecipe(recipeId) {
+      const tx = db.transaction(['recepty', 'sklad'], 'readwrite');
+      const receptyStore = tx.objectStore('recepty');
+      const skladStore = tx.objectStore('sklad');
+
+      const req = receptyStore.get(recipeId);
+
+      req.onsuccess = () => {
+        const recipe = req.result;
+        
+        // 1. KROK: Načteme sklad a ověříme dostatek zásoby
+        const skladReq = skladStore.getAll();
+        skladReq.onsuccess = () => {
+          const skladData = skladReq.result;
+          let chybejiciPolozky = [];
+
+          // Kontrola stavu
+          recipe.slozeni.forEach(ing => {
+            const item = skladData.find(s => s.id === ing.itemId);
+            if (!item || item.zasoba < ing.qty) {
+              const stav = item ? item.zasoba : 0;
+              chybejiciPolozky.push(`${ing.nazev} (potřeba ${ing.qty}ks, na skladě ${stav}ks)`);
+            }
+          });
+
+          if (chybejiciPolozky.length > 0) {
+            alert('Nelze odečíst recept! Nedostatečné zásoby:\n\n' + chybejiciPolozky.join('\n'));
+            return;
+          }
+
+          if (!confirm(`Opravdu chcete odečíst ze skladu položky pro recept "${recipe.nazev}"?`)) return;
+
+          // 2. KROK: Provedeme fyzické odečtení ze skladu
+          recipe.slozeni.forEach(ing => {
+            const item = skladData.find(s => s.id === ing.itemId);
+            item.zasoba -= ing.qty;
+            skladStore.put(item); // Aktualizace záznamu
+          });
+
+          alert(`Recept "${recipe.nazev}" byl úspěšně odečten ze skladu.`);
+          loadSkladItems(); // Obnovíme zásoby v rozbalovací nabídce
+        };
+      };
+    }
+
+    function deleteRecipe(id) {
+      if (!confirm('Opravdu chcete tento recept smazat?')) return;
+      const tx = db.transaction('recepty', 'readwrite');
+      const store = tx.objectStore('recepty');
+      store.delete(id);
+      tx.oncomplete = () => renderRecipes();
+    }
+  </script>
+</body>
+</html>

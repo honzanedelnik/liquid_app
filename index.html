@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <title>Odečtení receptu</title>
+  <style>
+    :root {
+      --primary: #007bff;
+      --success: #28a745;
+      --bg: #f8f9fa;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      padding: 15px;
+      box-sizing: border-box;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+    .nav-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .nav-btn {
+      flex: 1;
+      padding: 10px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      text-align: center;
+      text-decoration: none;
+      color: #333;
+      font-weight: bold;
+      font-size: 0.9em;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .card {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      margin-bottom: 15px;
+    }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-weight: bold; margin-bottom: 5px; }
+    select, input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: var(--success);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1.1em;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .recipe-preview {
+      background: #f1f3f5;
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 10px;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Odečtení ze skladu</h2>
+
+  <!-- Rozcestník na ostatní stránky -->
+  <div class="nav-buttons">
+    <a href="sklad.html" class="nav-btn">📦 Správa zásob</a>
+    <a href="recepty.html" class="nav-btn">🧪 Tvorba receptů</a>
+  </div>
+
+  <div class="card">
+    <div class="form-group">
+      <label for="recipeSelect">Vyberte recept:</label>
+      <select id="recipeSelect" onchange="previewRecipe()">
+        <option value="">-- Načítám recepty... --</option>
+      </select>
+    </div>
+
+    <!-- Náhled složení receptu -->
+    <div id="previewBox" class="recipe-preview" style="display:none;">
+      <strong>Složení dávky:</strong>
+      <div id="previewContent" style="margin-top: 5px;"></div>
+    </div>
+
+    <div class="form-group" style="margin-top: 15px;">
+      <label for="multiplier">Počet dávek (násobek):</label>
+      <input type="number" id="multiplier" value="1" min="1" step="1">
+    </div>
+
+    <button class="btn-submit" onclick="executeDeduction()">⚡ Odečíst ze skladu</button>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+
+    let db;
+    let recipesList = [];
+
+    const request = indexedDB.open('SkladDB', 3);
+
+    request.onsuccess = (e) => {
+      db = e.target.result;
+      loadRecipes();
+    };
+
+    function loadRecipes() {
+      const tx = db.transaction('recepty', 'readonly');
+      const store = tx.objectStore('recepty');
+      const req = store.getAll();
+
+      req.onsuccess = () => {
+        recipesList = req.result;
+        const select = document.getElementById('recipeSelect');
+        select.innerHTML = '<option value="">-- Vyberte recept --</option>';
+        
+        recipesList.forEach(r => {
+          select.innerHTML += `<option value="${r.id}">${r.nazev}</option>`;
+        });
+      };
+    }
+
+    function previewRecipe() {
+      const id = Number(document.getElementById('recipeSelect').value);
+      const previewBox = document.getElementById('previewBox');
+      const previewContent = document.getElementById('previewContent');
+
+      if (!id) {
+        previewBox.style.display = 'none';
+        return;
+      }
+
+      const recipe = recipesList.find(r => r.id === id);
+      if (recipe) {
+        previewContent.innerHTML = recipe.slozeni.map(i => `• ${i.nazev}: <strong>${i.qty} ks</strong>`).join('<br>');
+        previewBox.style.display = 'block';
+      }
+    }
+
+    function executeDeduction() {
+      const recipeId = Number(document.getElementById('recipeSelect').value);
+      const multiplier = parseInt(document.getElementById('multiplier').value, 10);
+
+      if (!recipeId) {
+        alert('Vyberte prosím recept.');
+        return;
+      }
+      if (isNaN(multiplier) || multiplier <= 0) {
+        alert('Zadejte platný počet dávek.');
+        return;
+      }
+
+      const recipe = recipesList.find(r => r.id === recipeId);
+
+      const tx = db.transaction(['recepty', 'sklad'], 'readwrite');
+      const skladStore = tx.objectStore('sklad');
+
+      const skladReq = skladStore.getAll();
+      skladReq.onsuccess = () => {
+        const skladData = skladReq.result;
+        let chybejiciPolozky = [];
+
+        // Kontrola dostatečné zásoby
+        recipe.slozeni.forEach(ing => {
+          const item = skladData.find(s => s.id === ing.itemId);
+          const potrebneMnozstvi = ing.qty * multiplier;
+          if (!item || item.zasoba < potrebneMnozstvi) {
+            const stav = item ? item.zasoba : 0;
+            chybejiciPolozky.push(`${ing.nazev} (potřeba ${potrebneMnozstvi}ks, na skladě ${stav}ks)`);
+          }
+        });
+
+        if (chybejiciPolozky.length > 0) {
+          alert('Nelze odečíst! Nedostatečné zásoby na skladě:\n\n' + chybejiciPolozky.join('\n'));
+          return;
+        }
+
+        if (!confirm(`Opravdu chcete odečíst ${multiplier}x recept "${recipe.nazev}"?`)) return;
+
+        // Provedení odečtení
+        recipe.slozeni.forEach(ing => {
+          const item = skladData.find(s => s.id === ing.itemId);
+          item.zasoba -= (ing.qty * multiplier);
+          skladStore.put(item);
+        });
+
+        alert(`Byl úspěšně odečten recept "${recipe.nazev}" (${multiplier}x dávka).`);
+        document.getElementById('recipeSelect').value = '';
+        document.getElementById('multiplier').value = '1';
+        document.getElementById('previewBox').style.display = 'none';
+      };
+    }
+  </script>
+</body>
+</html>
