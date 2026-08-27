@@ -1,10 +1,11 @@
-const CACHE_NAME = 'pwa-sklad-v2';
+const CACHE_NAME = 'pwa-sklad-v4';
 const ASSETS = [
   './',
   './index.html',
   './sklad.html',
   './recepty.html',
-  './manifest.json'
+  './manifest.json',
+  './icon.png' // <-- Nová ikona
 ];
 
 self.addEventListener('install', (e) => {
