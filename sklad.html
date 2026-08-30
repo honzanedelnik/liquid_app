@@ -2,20 +2,24 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
   <link rel="manifest" href="manifest.json">
-  <title>Skladová zásoba</title>
+  <link rel="apple-touch-icon" href="icon.png">
+  <title>Skladové zásoby</title>
   <style>
     :root {
       --primary: #007bff;
       --danger: #dc3545;
       --bg: #f8f9fa;
+      --nav-bg: #ffffff;
+      --nav-border: #e0e0e0;
+      --text-inactive: #6c757d;
     }
 
     html, body {
-      height: 100%;
+      min-height: 100%;
       margin: 0;
-      overflow: hidden; 
       background: var(--bg);
       font-family: system-ui, -apple-system, sans-serif;
     }
@@ -24,16 +28,13 @@
       display: flex;
       flex-direction: column;
       padding: 15px;
+      padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px));
       box-sizing: border-box;
       max-width: 650px;
       margin: 0 auto;
     }
 
-    h2 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      flex-shrink: 0;
-    }
+    h2 { margin-top: 0; margin-bottom: 15px; }
 
     .card {
       background: white;
@@ -41,14 +42,10 @@
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
       margin-bottom: 15px;
-      flex-shrink: 0;
     }
 
-    .form-group {
-      margin-bottom: 12px;
-    }
+    .form-group { margin-bottom: 12px; }
 
-    /* Úprava pro checkbox řádek */
     .form-group-checkbox {
       display: flex;
       align-items: center;
@@ -63,17 +60,9 @@
       cursor: pointer;
     }
 
-    .form-group-checkbox label {
-      margin-bottom: 0;
-      cursor: pointer;
-    }
+    .form-group-checkbox label { margin-bottom: 0; cursor: pointer; }
 
-    label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 4px;
-      font-size: 0.9em;
-    }
+    label { display: block; font-weight: bold; margin-bottom: 4px; font-size: 0.9em; }
 
     input[type="text"], input[type="number"] {
       width: 100%;
@@ -84,10 +73,7 @@
       font-size: 16px;
     }
 
-    .btn-group {
-      display: flex;
-      gap: 10px;
-    }
+    .btn-group { display: flex; gap: 10px; }
 
     button {
       flex: 1;
@@ -105,17 +91,13 @@
     .btn-delete { background: var(--danger); color: white; padding: 6px 10px; }
 
     .table-container {
-      flex: 1;
-      overflow-y: auto;
       background: white;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      overflow-x: auto;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
+    table { width: 100%; border-collapse: collapse; }
 
     th, td {
       padding: 10px 8px;
@@ -127,16 +109,12 @@
       background: #e9ecef;
       font-size: 0.8em;
       text-transform: uppercase;
-      position: sticky;
-      top: 0;
-      z-index: 1;
     }
 
     .actions { display: flex; gap: 5px; justify-content: flex-end; }
     .number-col { text-align: right; }
     .center-col { text-align: center; }
 
-    /* Štítek barviva */
     .badge {
       padding: 3px 6px;
       border-radius: 4px;
@@ -145,16 +123,48 @@
     }
     .badge-barvivo { background: #e3f2fd; color: #0d47a1; }
     .badge-ostatni { background: #f5f5f5; color: #616161; }
+
+    /* SPODNÍ NAVIGACE */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background-color: var(--nav-bg);
+      border-top: 1px solid var(--nav-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 1000;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      height: 100%;
+      color: var(--text-inactive);
+      text-decoration: none;
+      font-size: 0.75rem;
+      font-weight: 500;
+      gap: 3px;
+    }
+
+    .nav-item:active { transform: scale(0.94); }
+    .nav-icon { width: 24px; height: 24px; fill: currentColor; }
+    .nav-item.active { color: var(--primary); font-weight: bold; }
   </style>
 </head>
 <body>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
   <h2>Skladové zásoby</h2>
-  <a href="index.html" style="color: #007bff; text-decoration: none; font-weight: bold;">← Odečíst recept</a>
-</div>
 
-  <!-- Formulář -->
   <div class="card">
     <input type="hidden" id="itemId">
     
@@ -168,7 +178,6 @@
       <input type="number" id="zasoba" step="1" placeholder="např. 150">
     </div>
 
-    <!-- Nové zaškrtávací políčko (přednastaveno jako zaškrtnuté) -->
     <div class="form-group-checkbox">
       <input type="checkbox" id="jeBarvivo" checked>
       <label for="jeBarvivo">Jedná se o barvivo</label>
@@ -180,7 +189,6 @@
     </div>
   </div>
 
-  <!-- Tabulka dat -->
   <div class="table-container">
     <table>
       <thead>
@@ -192,11 +200,25 @@
           <th style="width: 20%; text-align: right;">Akce</th>
         </tr>
       </thead>
-      <tbody id="dataTable">
-        <!-- Sem JS vykreslí řádky -->
-      </tbody>
+      <tbody id="dataTable"></tbody>
     </table>
   </div>
+
+  <!-- SPODNÍ NAVIGACE (Aktivní: Sklad) -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+      <span>Odečíst</span>
+    </a>
+    <a href="sklad.html" class="nav-item active">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 13H4v-2h16v2zm0-7H4V4h16v2zm0 14H4v-2h16v2z"/></svg>
+      <span>Sklad</span>
+    </a>
+    <a href="recepty.html" class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      <span>Recepty</span>
+    </a>
+  </nav>
 
   <script>
     if ('serviceWorker' in navigator) {
@@ -204,22 +226,17 @@
     }
 
     let db;
-    // Zvýšíme verzi DB na 2 kvůli změně struktury
-const request = indexedDB.open('SkladDB', 3);
+    const request = indexedDB.open('SkladDB', 3);
 
-request.onupgradeneeded = (e) => {
-  db = e.target.result;
-  
-  // Tabulka pro sklad
-  if (!db.objectStoreNames.contains('sklad')) {
-    db.createObjectStore('sklad', { keyPath: 'id', autoIncrement: true });
-  }
-
-  // Nová tabulka pro recepty
-  if (!db.objectStoreNames.contains('recepty')) {
-    db.createObjectStore('recepty', { keyPath: 'id', autoIncrement: true });
-  }
-};
+    request.onupgradeneeded = (e) => {
+      db = e.target.result;
+      if (!db.objectStoreNames.contains('sklad')) {
+        db.createObjectStore('sklad', { keyPath: 'id', autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains('recepty')) {
+        db.createObjectStore('recepty', { keyPath: 'id', autoIncrement: true });
+      }
+    };
 
     request.onsuccess = (e) => {
       db = e.target.result;
@@ -232,49 +249,35 @@ request.onupgradeneeded = (e) => {
       const zasobaInput = document.getElementById('zasoba').value;
       const jeBarvivoInput = document.getElementById('jeBarvivo').checked;
 
-      if (!nazevInput) {
-        alert('Vyplňte prosím název.');
-        return;
-      }
-      if (zasobaInput === '' || isNaN(zasobaInput)) {
-        alert('Zadejte platnou zásobu (celé číslo).');
-        return;
-      }
+      if (!nazevInput) { alert('Vyplňte prosím název.'); return; }
+      if (zasobaInput === '' || isNaN(zasobaInput)) { alert('Zadejte platnou zásobu.'); return; }
 
       const tx = db.transaction('sklad', 'readwrite');
       const store = tx.objectStore('sklad');
-
       const request = store.getAll();
 
       request.onsuccess = () => {
         const items = request.result;
-        
         const existingItem = items.find(item => 
           item.nazev.toLowerCase() === nazevInput.toLowerCase() && item.id !== Number(idInput)
         );
 
         if (existingItem) {
-          alert(`Položka s názvem "${nazevInput}" už v databázi existuje!`);
+          alert(`Položka s názvem "${nazevInput}" už existuje!`);
           return;
         }
 
         const itemData = {
           nazev: nazevInput.substring(0, 30),
           zasoba: parseInt(zasobaInput, 10),
-          jeBarvivo: jeBarvivoInput // Uložení boolean hodnoty (true/false)
+          jeBarvivo: jeBarvivoInput
         };
 
-        if (idInput) {
-          itemData.id = Number(idInput);
-        }
-
+        if (idInput) itemData.id = Number(idInput);
         store.put(itemData);
       };
 
-      tx.oncomplete = () => {
-        resetForm();
-        renderTable();
-      };
+      tx.oncomplete = () => { resetForm(); renderTable(); };
     }
 
     function renderTable() {
@@ -288,9 +291,7 @@ request.onupgradeneeded = (e) => {
       request.onsuccess = () => {
         const items = request.result;
         items.forEach(item => {
-          // Ošetření starších záznamů, pokud by neměly definováno jeBarvivo
           const jeBarvivo = item.jeBarvivo !== undefined ? item.jeBarvivo : true;
-          
           const typBadge = jeBarvivo 
             ? '<span class="badge badge-barvivo">🎨 Barvivo</span>' 
             : '<span class="badge badge-ostatni">📦 Ostatní</span>';
@@ -319,25 +320,22 @@ request.onupgradeneeded = (e) => {
       
       document.getElementById('saveBtn').innerText = 'Přepsat položku';
       document.getElementById('cancelBtn').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function deleteItem(id) {
       if (!confirm('Opravdu chcete tuto položku smazat?')) return;
-
       const tx = db.transaction('sklad', 'readwrite');
       const store = tx.objectStore('sklad');
       store.delete(id);
-
-      tx.oncomplete = () => {
-        renderTable();
-      };
+      tx.oncomplete = () => renderTable();
     }
 
     function resetForm() {
       document.getElementById('itemId').value = '';
       document.getElementById('nazev').value = '';
       document.getElementById('zasoba').value = '';
-      document.getElementById('jeBarvivo').checked = true; // Zpět na výchozí barvivo
+      document.getElementById('jeBarvivo').checked = true;
       document.getElementById('saveBtn').innerText = 'Uložit položku';
       document.getElementById('cancelBtn').style.display = 'none';
     }
