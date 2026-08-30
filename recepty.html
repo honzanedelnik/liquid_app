@@ -155,16 +155,16 @@
 
   <div class="card">
     <div class="form-group">
-      <label for="recipeName">Název receptu / sestavy:</label>
-      <input type="text" id="recipeName" placeholder="např. Barva Odstín 402">
+      <label for="recipeName">Název receptu:</label>
+      <input type="text" id="recipeName">
     </div>
 
     <label>Složení receptu:</label>
     <div class="row-builder">
       <select id="itemSelect">
-        <option value="">-- Vyberte položku --</option>
+        <option value="">Položka</option>
       </select>
-      <input type="number" id="itemQty" placeholder="Kusů" min="1" step="1">
+      <input type="number" id="itemQty" placeholder="Ks" min="1" step="1">
       <button class="btn btn-add" onclick="addIngredient()">+ Přidat</button>
     </div>
 
@@ -182,7 +182,7 @@
   <nav class="bottom-nav">
     <a href="index.html" class="nav-item">
       <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
-      <span>Odečíst</span>
+      <span>Míchání</span>
     </a>
     <a href="sklad.html" class="nav-item">
       <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 13H4v-2h16v2zm0-7H4V4h16v2zm0 14H4v-2h16v2z"/></svg>
