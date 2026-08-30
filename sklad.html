@@ -169,18 +169,18 @@
     <input type="hidden" id="itemId">
     
     <div class="form-group">
-      <label for="nazev">Název (max 30 znaků):</label>
-      <input type="text" id="nazev" maxlength="30" placeholder="např. Červená pigmentová">
+      <label for="nazev">Název:</label>
+      <input type="text" id="nazev" maxlength="30">
     </div>
 
     <div class="form-group">
-      <label for="zasoba">Zásoba (celé číslo):</label>
-      <input type="number" id="zasoba" step="1" placeholder="např. 150">
+      <label for="zasoba">Zásoba:</label>
+      <input type="number" id="zasoba" step="1">
     </div>
 
     <div class="form-group-checkbox">
       <input type="checkbox" id="jeBarvivo" checked>
-      <label for="jeBarvivo">Jedná se o barvivo</label>
+      <label for="jeBarvivo">Liquid</label>
     </div>
 
     <div class="btn-group">
@@ -193,8 +193,7 @@
     <table>
       <thead>
         <tr>
-          <th style="width: 8%;">ID</th>
-          <th style="width: 37%;">Název</th>
+          <th style="width: 45%;">Název</th>
           <th style="width: 20%; text-align: center;">Typ</th>
           <th style="width: 15%; text-align: right;">Zásoba</th>
           <th style="width: 20%; text-align: right;">Akce</th>
@@ -204,11 +203,11 @@
     </table>
   </div>
 
-  <!-- SPODNÍ NAVIGACE (Aktivní: Sklad) -->
+  <!-- SPODNÍ NAVIGACE -->
   <nav class="bottom-nav">
     <a href="index.html" class="nav-item">
       <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
-      <span>Odečíst</span>
+      <span>Míchání</span>
     </a>
     <a href="sklad.html" class="nav-item active">
       <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 13H4v-2h16v2zm0-7H4V4h16v2zm0 14H4v-2h16v2z"/></svg>
@@ -298,8 +297,7 @@
 
           tbody.innerHTML += `
             <tr>
-              <td><strong>#${item.id}</strong></td>
-              <td>${escapeHtml(item.nazev)}</td>
+              <td><strong>${escapeHtml(item.nazev)}</strong></td>
               <td class="center-col">${typBadge}</td>
               <td class="number-col">${item.zasoba}</td>
               <td class="actions">
