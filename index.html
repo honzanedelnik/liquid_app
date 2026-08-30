@@ -2,7 +2,8 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon.png">
   <title>Odečtení receptu</title>
@@ -11,39 +12,31 @@
       --primary: #007bff;
       --success: #28a745;
       --bg: #f8f9fa;
+      --nav-bg: #ffffff;
+      --nav-border: #e0e0e0;
+      --text-inactive: #6c757d;
     }
+
     html, body {
-      height: 100%;
+      min-height: 100%;
       margin: 0;
       background: var(--bg);
       font-family: system-ui, -apple-system, sans-serif;
     }
+
     body {
       display: flex;
       flex-direction: column;
       padding: 15px;
+      /* Odsazení pro spodní lištu včetně safe-area pro iPhone/Android */
+      padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px));
       box-sizing: border-box;
       max-width: 650px;
       margin: 0 auto;
     }
-    .nav-buttons {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-    .nav-btn {
-      flex: 1;
-      padding: 10px;
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      text-align: center;
-      text-decoration: none;
-      color: #333;
-      font-weight: bold;
-      font-size: 0.9em;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
+
+    h2 { margin-top: 0; margin-bottom: 15px; }
+
     .card {
       background: white;
       padding: 15px;
@@ -51,6 +44,7 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
       margin-bottom: 15px;
     }
+
     .form-group { margin-bottom: 15px; }
     label { display: block; font-weight: bold; margin-bottom: 5px; }
     select, input {
@@ -61,6 +55,7 @@
       font-size: 16px;
       box-sizing: border-box;
     }
+
     .btn-submit {
       width: 100%;
       padding: 14px;
@@ -72,6 +67,7 @@
       font-weight: bold;
       cursor: pointer;
     }
+
     .recipe-preview {
       background: #f1f3f5;
       padding: 12px;
@@ -79,17 +75,47 @@
       margin-top: 10px;
       font-size: 0.9em;
     }
+
+    /* SPODNÍ NAVIGACE */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background-color: var(--nav-bg);
+      border-top: 1px solid var(--nav-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 1000;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      height: 100%;
+      color: var(--text-inactive);
+      text-decoration: none;
+      font-size: 0.75rem;
+      font-weight: 500;
+      gap: 3px;
+    }
+
+    .nav-item:active { transform: scale(0.94); }
+    .nav-icon { width: 24px; height: 24px; fill: currentColor; }
+    .nav-item.active { color: var(--primary); font-weight: bold; }
   </style>
 </head>
 <body>
 
   <h2>Odečtení ze skladu</h2>
-
-  <!-- Rozcestník na ostatní stránky -->
-  <div class="nav-buttons">
-    <a href="sklad.html" class="nav-btn">📦 Správa zásob</a>
-    <a href="recepty.html" class="nav-btn">🧪 Tvorba receptů</a>
-  </div>
 
   <div class="card">
     <div class="form-group">
@@ -99,7 +125,6 @@
       </select>
     </div>
 
-    <!-- Náhled složení receptu -->
     <div id="previewBox" class="recipe-preview" style="display:none;">
       <strong>Složení dávky:</strong>
       <div id="previewContent" style="margin-top: 5px;"></div>
@@ -112,6 +137,22 @@
 
     <button class="btn-submit" onclick="executeDeduction()">⚡ Odečíst ze skladu</button>
   </div>
+
+  <!-- SPODNÍ NAVIGACE (Aktivní: Odečíst) -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item active">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+      <span>Odečíst</span>
+    </a>
+    <a href="sklad.html" class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 13H4v-2h16v2zm0-7H4V4h16v2zm0 14H4v-2h16v2z"/></svg>
+      <span>Sklad</span>
+    </a>
+    <a href="recepty.html" class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      <span>Recepty</span>
+    </a>
+  </nav>
 
   <script>
     if ('serviceWorker' in navigator) {
@@ -184,7 +225,6 @@
         const skladData = skladReq.result;
         let chybejiciPolozky = [];
 
-        // Kontrola dostatečné zásoby
         recipe.slozeni.forEach(ing => {
           const item = skladData.find(s => s.id === ing.itemId);
           const potrebneMnozstvi = ing.qty * multiplier;
@@ -201,7 +241,6 @@
 
         if (!confirm(`Opravdu chcete odečíst ${multiplier}x recept "${recipe.nazev}"?`)) return;
 
-        // Provedení odečtení
         recipe.slozeni.forEach(ing => {
           const item = skladData.find(s => s.id === ing.itemId);
           item.zasoba -= (ing.qty * multiplier);
