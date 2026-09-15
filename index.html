@@ -1,258 +1,40 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#ffffff">
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon.png">
-  <title>Odečtení receptu</title>
-  <style>
-    :root {
-      --primary: #007bff;
-      --success: #28a745;
-      --bg: #f8f9fa;
-      --nav-bg: #ffffff;
-      --nav-border: #e0e0e0;
-      --text-inactive: #6c757d;
-    }
-
-    html, body {
-      min-height: 100%;
-      margin: 0;
-      background: var(--bg);
-      font-family: system-ui, -apple-system, sans-serif;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-      padding: 15px;
-      /* Odsazení pro spodní lištu včetně safe-area pro iPhone/Android */
-      padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px));
-      box-sizing: border-box;
-      max-width: 650px;
-      margin: 0 auto;
-    }
-
-    h2 { margin-top: 0; margin-bottom: 15px; }
-
-    .card {
-      background: white;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      margin-bottom: 15px;
-    }
-
-    .form-group { margin-bottom: 15px; }
-    label { display: block; font-weight: bold; margin-bottom: 5px; }
-    select, input {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-
-    .btn-submit {
-      width: 100%;
-      padding: 14px;
-      background: var(--success);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 1.1em;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .recipe-preview {
-      background: #f1f3f5;
-      padding: 12px;
-      border-radius: 6px;
-      margin-top: 10px;
-      font-size: 0.9em;
-    }
-
-    /* SPODNÍ NAVIGACE */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 60px;
-      background-color: var(--nav-bg);
-      border-top: 1px solid var(--nav-border);
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      z-index: 1000;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
-
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      flex: 1;
-      height: 100%;
-      color: var(--text-inactive);
-      text-decoration: none;
-      font-size: 0.75rem;
-      font-weight: 500;
-      gap: 3px;
-    }
-
-    .nav-item:active { transform: scale(0.94); }
-    .nav-icon { width: 24px; height: 24px; fill: currentColor; }
-    .nav-item.active { color: var(--primary); font-weight: bold; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skladové Zásoby</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2b5c8f">
 </head>
 <body>
+    <header>
+        <h1>Skladové zásoby</h1>
+    </header>
 
-  <h2>Míchání</h2>
+    <main>
+        <section class="card">
+            <h2>Přidat novou položku</h2>
+            <form id="add-item-form">
+                <input type="text" id="item-name" placeholder="Název položky" required>
+                <input type="number" id="item-qty" placeholder="Počáteční ks" min="0" value="0" required>
+                <button type="submit" class="btn btn-primary">Přidat</button>
+            </form>
+        </section>
 
-  <div class="card">
-    <div class="form-group">
-      <label for="recipeSelect">Vyberte recept:</label>
-      <select id="recipeSelect" onchange="previewRecipe()">
-        <option value="">Recepty</option>
-      </select>
-    </div>
+        <section class="card">
+            <input type="text" id="search-input" placeholder="Hledat v zásobách...">
+        </section>
 
-    <div id="previewBox" class="recipe-preview" style="display:none;">
-      <strong>Složení dávky:</strong>
-      <div id="previewContent" style="margin-top: 5px;"></div>
-    </div>
+        <section class="card">
+            <h2>Seznam položek</h2>
+            <div id="items-list" class="items-list">
+                <!-- Položky se načtou dynamicky -->
+            </div>
+        </section>
+    </main>
 
-    <div class="form-group" style="margin-top: 15px;">
-      <label for="multiplier">Počet dávek:</label>
-      <input type="number" id="multiplier" value="1" min="1" step="1">
-    </div>
-
-    <button class="btn-submit" onclick="executeDeduction()">Odečíst ze skladu</button>
-  </div>
-
-  <!-- SPODNÍ NAVIGACE (Aktivní: Odečíst) -->
-  <nav class="bottom-nav">
-    <a href="index.html" class="nav-item active">
-      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
-      <span>Míchání</span>
-    </a>
-    <a href="sklad.html" class="nav-item">
-      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 13H4v-2h16v2zm0-7H4V4h16v2zm0 14H4v-2h16v2z"/></svg>
-      <span>Sklad</span>
-    </a>
-    <a href="recepty.html" class="nav-item">
-      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-      <span>Recepty</span>
-    </a>
-  </nav>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
-    }
-
-    let db;
-    let recipesList = [];
-
-    const request = indexedDB.open('SkladDB', 3);
-
-    request.onsuccess = (e) => {
-      db = e.target.result;
-      loadRecipes();
-    };
-
-    function loadRecipes() {
-      const tx = db.transaction('recepty', 'readonly');
-      const store = tx.objectStore('recepty');
-      const req = store.getAll();
-
-      req.onsuccess = () => {
-        recipesList = req.result;
-        const select = document.getElementById('recipeSelect');
-        select.innerHTML = '<option value="">-- Vyberte recept --</option>';
-        
-        recipesList.forEach(r => {
-          select.innerHTML += `<option value="${r.id}">${r.nazev}</option>`;
-        });
-      };
-    }
-
-    function previewRecipe() {
-      const id = Number(document.getElementById('recipeSelect').value);
-      const previewBox = document.getElementById('previewBox');
-      const previewContent = document.getElementById('previewContent');
-
-      if (!id) {
-        previewBox.style.display = 'none';
-        return;
-      }
-
-      const recipe = recipesList.find(r => r.id === id);
-      if (recipe) {
-        previewContent.innerHTML = recipe.slozeni.map(i => `• ${i.nazev}: <strong>${i.qty} ks</strong>`).join('<br>');
-        previewBox.style.display = 'block';
-      }
-    }
-
-    function executeDeduction() {
-      const recipeId = Number(document.getElementById('recipeSelect').value);
-      const multiplier = parseInt(document.getElementById('multiplier').value, 10);
-
-      if (!recipeId) {
-        alert('Vyberte prosím recept.');
-        return;
-      }
-      if (isNaN(multiplier) || multiplier <= 0) {
-        alert('Zadejte platný počet dávek.');
-        return;
-      }
-
-      const recipe = recipesList.find(r => r.id === recipeId);
-
-      const tx = db.transaction(['recepty', 'sklad'], 'readwrite');
-      const skladStore = tx.objectStore('sklad');
-
-      const skladReq = skladStore.getAll();
-      skladReq.onsuccess = () => {
-        const skladData = skladReq.result;
-        let chybejiciPolozky = [];
-
-        recipe.slozeni.forEach(ing => {
-          const item = skladData.find(s => s.id === ing.itemId);
-          const potrebneMnozstvi = ing.qty * multiplier;
-          if (!item || item.zasoba < potrebneMnozstvi) {
-            const stav = item ? item.zasoba : 0;
-            chybejiciPolozky.push(`${ing.nazev} (potřeba ${potrebneMnozstvi}ks, na skladě ${stav}ks)`);
-          }
-        });
-
-        if (chybejiciPolozky.length > 0) {
-          alert('Nelze odečíst! Nedostatečné zásoby na skladě:\n\n' + chybejiciPolozky.join('\n'));
-          return;
-        }
-
-        if (!confirm(`Opravdu chcete odečíst ${multiplier}x recept "${recipe.nazev}"?`)) return;
-
-        recipe.slozeni.forEach(ing => {
-          const item = skladData.find(s => s.id === ing.itemId);
-          item.zasoba -= (ing.qty * multiplier);
-          skladStore.put(item);
-        });
-
-        alert(`Byl úspěšně odečten recept "${recipe.nazev}" (${multiplier}x dávka).`);
-        document.getElementById('recipeSelect').value = '';
-        document.getElementById('multiplier').value = '1';
-        document.getElementById('previewBox').style.display = 'none';
-      };
-    }
-  </script>
+    <script src="app.js"></script>
 </body>
 </html>
